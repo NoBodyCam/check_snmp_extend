@@ -7,7 +7,7 @@
 # Patches Welcome!
 # https://github.com/nickanderson/check_snmp_extend
 # Forked by: Chris Krelle: nobodycam@gmail.com
-# 07/20/2013
+# 07/20/2013 pep8 and v3 auth refactoring
 ###################################################
 #
 # IMPORT
@@ -75,6 +75,40 @@ exit_codes = {
 ###################################################
 class TimeoutException(Exception):
     pass
+
+
+def _get_snmpwalk_command(options, mib, extcmd=None):
+    """Generate snmpwalk command.
+
+    :pram: options object
+    :returns: string that is the snmpwalk command
+    """
+    return_text = "snmpwalk -v%s " % options.snmp_version
+    if options.snmp_version == '3':
+        return_text += "-u %s -l %s " % (options.snmp_user,
+                                         options.snmp_seclevel)
+        if options.snmp_seclevel.lower() != "noauthnopriv":
+            return_text += "-a %s " % options.snmp_authproto
+            if options.snmp_authpass:
+                return_text += "-A %s " % options.snmp_authpass
+            if options.snmp_privproto:
+                return_text += "-x %s " % options.snmp_privproto
+                if options.snmp_privpass:
+                    return_text += "-X %s " % options.snmp_privpass
+    else:
+        return_text = "-c %s -OQ %s " % (options.community, options.host)
+
+    mib = "'NET-SNMP-EXTEND-MIB::%s" % mib
+    if not extcmd:
+        return_text += "-OQ %s " % options.host
+        mib += "'"
+    else:
+        return_text += "-OQv %s " % options.host
+        mib += '."%s"\'' % extcmd
+
+    return_text += "%s" % mib
+
+    return return_text
 
 
 def timeout():
@@ -149,24 +183,7 @@ def check_snmp_extend():
     timeoutstr = "Timeout: No Response from " + options.host
     noexecstr = "::nsExtendResult = No Such Instance currently exists at " \
                 "this OID"
-    if options.snmp_version == '3':
-        snmp_request = "snmpwalk -v%s -u %s -l %s -a %s -A %s -x %s -X %s " \
-                       "-OQ %s 'NET-SNMP-EXTEND-MIB::nsExtendResult'" % \
-                       (options.snmp_version,
-                       options.snmp_user,
-                       options.snmp_seclevel,
-                       options.snmp_authproto,
-                       options.snmp_authpass,
-                       options.snmp_privproto,
-                       options.snmp_privpass,
-                       options.host)
-    else:
-        snmp_request = "snmpwalk -v%s -c %s -OQ %s " \
-                       "'NET-SNMP-EXTEND-MIB::nsExtendResult'" % \
-                       (options.snmp_version,
-                       options.community,
-                       options.host)
-
+    snmp_request = _get_snmpwalk_command(options, "nsExtendResult")
     results = commands.getoutput(snmp_request).split("NET-SNMP-EXTEND-MIB")
     if options.debug:
         debug("snmp request: %s" % (snmp_request))
@@ -177,23 +194,7 @@ def check_snmp_extend():
               (options.host))
     if results[1] == noexecstr:
         error("No extend snmp found for this server: %s." % (options.host))
-
-    if options.snmp_version == '3':
-        snmp_request = "snmpwalk -v%s -u %s -l %s -a %s -A %s -x %s -X %s" \
-                       " -OQ %s 'NET-SNMP-EXTEND-MIB::nsExtendOutputFull'" % \
-                       (options.snmp_version,
-                       options.snmp_user,
-                       options.snmp_seclevel,
-                       options.snmp_authproto,
-                       options.snmp_authpass,
-                       options.snmp_privproto,
-                       options.snmp_privpass,
-                       options.host)
-    else:
-        snmp_request = "snmpwalk -v%s -c %s -OQ %s " \
-                       "'NET-SNMP-EXTEND-MIB::nsExtendOutputFull'" % \
-                       (options.snmp_version, options.community, options.host)
-
+    snmp_request = _get_snmpwalk_command(options, "nsExtendOutputFull")
     outputs = commands.getoutput(snmp_request).split("NET-SNMP-EXTEND-MIB")
     if options.debug:
         debug("snmp request: %s" % (snmp_request))
@@ -295,25 +296,8 @@ def check_this_snmp_extend():
     timeoutstr = "Timeout: No Response from " + options.host
     noexecstr = "No Such Instance currently exists at this OID"
 
-    if options.snmp_version == '3':
-        snmp_request = "snmpwalk -v%s -u %s -l %s -a %s -A %s -x %s -X %s " \
-                       "-OQv %s 'NET-SNMP-EXTEND-MIB::nsExtendResult.\"%s\"'" \
-                       % (options.snmp_version,
-                       options.snmp_user,
-                       options.snmp_seclevel,
-                       options.snmp_authproto,
-                       options.snmp_authpass,
-                       options.snmp_privproto,
-                       options.snmp_privpass,
-                       options.host,
-                       options.extend_name)
-    else:
-        snmp_request = "snmpwalk -v%s -c %s -OQv %s " \
-                       "'NET-SNMP-EXTEND-MIB::nsExtendResult.\"%s\"'" % \
-                       (options.snmp_version,
-                       options.community,
-                       options.host,
-                       options.extend_name)
+    snmp_request = _get_snmpwalk_command(options, "nsExtendResult",
+                                         options.extend_name)
 
     result = commands.getoutput(snmp_request)
     if options.debug:
@@ -327,26 +311,8 @@ def check_this_snmp_extend():
         error("No response from: %s. Maybe community is not good ?" %
               (options.host))
 
-    if options.snmp_version == '3':
-        snmp_request = "snmpwalk -v%s -u %s -l %s -a %s -A %s -x %s -X %s " \
-                       "-OQv %s " \
-                       "'NET-SNMP-EXTEND-MIB::nsExtendOutputFull.\"%s\"'" % \
-                       (options.snmp_version,
-                       options.snmp_user,
-                       options.snmp_seclevel,
-                       options.snmp_authproto,
-                       options.snmp_authpass,
-                       options.snmp_privproto,
-                       options.snmp_privpass,
-                       options.host,
-                       options.extend_name)
-    else:
-        snmp_request = "snmpwalk -v%s -c %s -OQv %s " \
-            "'NET-SNMP-EXTEND-MIB::nsExtendOutputFull.\"%s\"'" % \
-            (options.snmp_version,
-            options.community,
-            options.host,
-            options.extend_name)
+    snmp_request = _get_snmpwalk_command(options, "nsExtendOutputFull",
+                                         options.extend_name)
 
     output = commands.getoutput(snmp_request)
     if options.debug:
