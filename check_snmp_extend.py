@@ -8,6 +8,8 @@
 # https://github.com/nickanderson/check_snmp_extend
 # Forked by: Chris Krelle: nobodycam@gmail.com
 # 07/20/2013 pep8 and v3 auth refactoring
+# 07/24/2013 fix timeout
+# https://github.com/NoBodyCam/check_snmp_extend
 ###################################################
 #
 # IMPORT
@@ -83,7 +85,8 @@ def _get_snmpwalk_command(options, mib, extcmd=None):
     :pram: options object
     :returns: string that is the snmpwalk command
     """
-    return_text = "snmpwalk -v%s " % options.snmp_version
+    return_text = "snmpwalk -v%s -t %d " % (options.snmp_version,
+                                            options.timeout)
     if options.snmp_version == '3':
         return_text += "-u %s -l %s " % (options.snmp_user,
                                          options.snmp_seclevel)
@@ -180,7 +183,8 @@ def check_snmp_extend():
 
     output_table = {}
 
-    timeoutstr = "Timeout: No Response from " + options.host
+    #timeoutstr = "Timeout: No Response from " + options.host
+    timeoutstr = "Timeout"
     noexecstr = "::nsExtendResult = No Such Instance currently exists at " \
                 "this OID"
     snmp_request = _get_snmpwalk_command(options, "nsExtendResult")
@@ -293,7 +297,8 @@ def check_this_snmp_extend():
 
     output_table = {}
 
-    timeoutstr = "Timeout: No Response from " + options.host
+    #timeoutstr = "Timeout: No Response from " + options.host
+    timeoutstr = "snmpwalk: Timeout"
     noexecstr = "No Such Instance currently exists at this OID"
 
     snmp_request = _get_snmpwalk_command(options, "nsExtendResult",
@@ -308,8 +313,8 @@ def check_this_snmp_extend():
         error("This extend module is not found for this server: %s" %
               (options.extend_name))
     if result == timeoutstr:
-        error("No response from: %s. Maybe community is not good ?" %
-              (options.host))
+        error("No response from: %s. Maybe timeout(%d)?" %
+              (options.host, options.timeout))
 
     snmp_request = _get_snmpwalk_command(options, "nsExtendOutputFull",
                                          options.extend_name)
@@ -325,6 +330,10 @@ def check_this_snmp_extend():
     if result == timeoutstr:
         error("No response from: %s. Maybe community is not good ?" %
               (options.host))
+
+    if result == "":
+        error("No response from: %s. Maybe timeout(%d)?" %
+              (options.host, options.timeout))
 
     overall_status = int(result)
 
@@ -402,8 +411,8 @@ def parse_options():
                       help="SNMP extend name [default: ALL]")
 
     parser.add_option("-t", "--timeout", dest="timeout",
-                      default=10,
-                      help="Timeout [default: 10]")
+                      default=15, type="int",
+                      help="Timeout [default: 15]")
 
     parser.add_option("-u", "--user", dest="snmp_user",
                       help="SNMP username (v3 only)")
