@@ -42,30 +42,30 @@ ok_count = 0
 not_ok_count = 0
 
 state = {
-    ok:         "OK",
-    unknown:    "UNKNOWN",
-    warning:    "WARNING",
-    critical:   "CRITICAL"
+    ok: "OK",
+    unknown: "UNKNOWN",
+    warning: "WARNING",
+    critical: "CRITICAL"
 }
 
 state_nagios = {
-    "OK":       0,
-    "WARNING":  1,
+    "OK": 0,
+    "WARNING": 1,
     "CRITICAL": 2,
-    "UNKNOWN":  3
+    "UNKNOWN": 3
 }
 state_nagios_text = {
-    0:  "OK",
-    1:  "WARNING",
-    2:  "CRITICAL",
-    3:  "UNKNOWN"
+    0: "OK",
+    1: "WARNING",
+    2: "CRITICAL",
+    3: "UNKNOWN"
 }
 
 exit_codes = {
-    0:  state_nagios["OK"],
-    1:  state_nagios["UNKNOWN"],
-    2:  state_nagios["WARNING"],
-    3:  state_nagios["CRITICAL"]
+    0: state_nagios["OK"],
+    1: state_nagios["UNKNOWN"],
+    2: state_nagios["WARNING"],
+    3: state_nagios["CRITICAL"]
 }
 
 
@@ -217,11 +217,11 @@ def check_snmp_extend():
         plugin_return_code = int(cleaned_result[1])
         if not plugin_name in output_table:
             output_table[plugin_name] = {
-                "Name":         "",
-                "Result":       unknown,
-                "Summary":      "",
-                "Perfdata":     "",
-                "LongOutput":   ""
+                "Name": "",
+                "Result": unknown,
+                "Summary": "",
+                "Perfdata": "",
+                "LongOutput": ""
             }
 
         #output_table[plugin_name]["Name"] = plugin_name
@@ -237,11 +237,11 @@ def check_snmp_extend():
 
         if not plugin_name in output_table:
             output_table[plugin_name] = {
-                "Name":         "",
-                "Result":       unknown,
-                "Summary":      "",
-                "Perfdata":     "",
-                "LongOutput":   ""
+                "Name": "",
+                "Result": unknown,
+                "Summary": "",
+                "Perfdata": "",
+                "LongOutput": ""
             }
 
         #output_table[plugin_name]["Name"] = plugin_name
@@ -284,7 +284,7 @@ def check_snmp_extend():
         if options.debug:
             debug("extend name: %s, summary: %s, perfdata: %s, longoutput: %s"
                   % (snmp_extend[0], snmp_extend[1]["Summary"],
-                  snmp_extend[1]["Perfdata"], snmp_extend[1]["LongOutput"]))
+                     snmp_extend[1]["Perfdata"], snmp_extend[1]["LongOutput"]))
 
 
 ###################################################
@@ -456,7 +456,7 @@ def error(errortext, exit_code=unknown):
 #       print debug text
 ###################################################
 def debug(debugtext):
-    print   debugtext
+    print debugtext
 
 
 ###################################################
